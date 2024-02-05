@@ -1,78 +1,138 @@
-from tkinter import *
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLineEdit, QPushButton, QLabel, QFrame, QComboBox, QHBoxLayout
 from pytube import YouTube
 import os
-from moviepy.editor import *
-from tkinter import Tk
+from moviepy.editor import AudioFileClip
 
-def get_clipboard_data():
-    c = Tk()
-    c.withdraw()
-    clip = c.clipboard_get()
-    c.update()
-    c.destroy()
-    return clip
+class YoutubeDownloaderApp(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("YouTube Video Downloader")
 
-def download_video():
-    url = entry.get()
-    if not url:
-        # Если URL не введен, попробуйте взять его из буфера обмена
-        clipboard_data = get_clipboard_data()
-        entry.delete(0, END)
-        entry.insert(0, clipboard_data)
-        url = entry.get()
-    
-    if url:
-        yt = YouTube(url)
-        video_stream = yt.streams.first()
-        video_stream.download(output_path=os.path.expanduser('~/Downloads'), filename='temp.mp4')
-        status_label.config(text="Видео успешно скачано!")
-    else:
-        status_label.config(text="Пожалуйста, введите URL")
+        self.init_ui()
 
-def convert_to_mp3():
-    video = os.path.expanduser('~/Downloads/temp.mp4')
-    audio = os.path.expanduser('~/Downloads/temp.mp3')
-    file = AudioFileClip(video)
-    file.write_audiofile(audio)
-    file.close()
-    status_label.config(text="Конвертация завершена!")
+    def init_ui(self):
+        # Создание вертикального макета
+        layout = QVBoxLayout(self)
 
-def insert_from_clipboard():
-    clipboard_data = get_clipboard_data()
-    entry.delete(0, END)
-    entry.insert(0, clipboard_data)
+        # Создание фрейма для ввода URL и выбора качества
+        url_quality_frame = QFrame(self)
+        layout.addWidget(url_quality_frame)
 
-# Создание главного окна
-root = Tk()
-root.title("YouTube Video Downloader")
+        # Создание горизонтального макета для ввода URL и выбора качества
+        url_quality_layout = QHBoxLayout(url_quality_frame)
 
-# Создание фрейма для ввода URL
-url_frame = Frame(root)
-url_frame.pack(pady=10)
+        # Создание текстового поля для ввода URL
+        self.entry = QLineEdit(self)
+        url_quality_layout.addWidget(self.entry)
 
-# Создание текстового поля для ввода URL
-entry = Entry(url_frame, width=40)
-entry.grid(row=0, column=0, padx=5)
+        # Кнопка для вставки из буфера обмена
+        insert_from_clipboard_button = QPushButton("Вставить из буфера обмена", self)
+        insert_from_clipboard_button.clicked.connect(self.insert_from_clipboard)
+        url_quality_layout.addWidget(insert_from_clipboard_button)
 
-# Кнопка для вставки из буфера обмена
-insert_from_clipboard_button = Button(url_frame, text="Вставить из буфера обмена", command=insert_from_clipboard)
-insert_from_clipboard_button.grid(row=0, column=1, padx=5)
+        # Выпадающий список для выбора качества видео
+        self.quality_combo = QComboBox(self)
+        self.quality_combo.addItem("Выберите качество")
+        url_quality_layout.addWidget(self.quality_combo)
 
-# Создание фрейма для кнопок "Скачать видео" и "Конвертировать в MP3"
-button_frame = Frame(root)
-button_frame.pack(pady=10)
+        # Создание фрейма для кнопок "Скачать видео" и "Конвертировать в MP3"
+        button_frame = QFrame(self)
+        layout.addWidget(button_frame)
 
-# Кнопка для скачивания видео
-download_button = Button(button_frame, text="Скачать видео", command=download_video)
-download_button.grid(row=0, column=0, padx=5)
+        # Кнопка для скачивания видео
+        download_button = QPushButton("Скачать видео", self)
+        download_button.clicked.connect(self.download_video)
 
-# Кнопка для конвертации в MP3
-convert_button = Button(button_frame, text="Конвертировать в MP3", command=convert_to_mp3)
-convert_button.grid(row=0, column=1, padx=5)
+        # Кнопка для конвертации в MP3
+        convert_button = QPushButton("Конвертировать в MP3", self)
+        convert_button.clicked.connect(self.convert_to_mp3)
 
-# Метка для вывода статуса
-status_label = Label(root, text="")
-status_label.pack(pady=10)
+        button_frame_layout = QHBoxLayout(button_frame)
+        button_frame_layout.addWidget(download_button)
+        button_frame_layout.addWidget(convert_button)
 
-# Запуск главного цикла
-root.mainloop()
+        # Метка для вывода статуса
+        self.status_label = QLabel(self)
+        layout.addWidget(self.status_label)
+
+        self.setLayout(layout)
+
+        # Применение стилей
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #f0f0f0;
+                color: #333;
+                font-size: 14px;
+            }
+
+            QPushButton {
+                background-color: #009B77;
+                color: white;
+                padding: 10px 15px;
+                border: none;
+                border-radius: 4px;
+            }
+
+            QPushButton:hover {
+                background-color: #00664E;
+            }
+
+            QLineEdit, QComboBox {
+                padding: 8px;
+                font-size: 14px;
+            }
+
+            QComboBox::drop-down {
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                width: 20px;
+                border-left-width: 1px;
+                border-left-color: darkgray;
+                border-left-style: solid;
+                border-top-right-radius: 3px;
+                border-bottom-right-radius: 3px;
+            }
+        """)
+
+    def get_clipboard_data(self):
+        clipboard = QApplication.clipboard()
+        return clipboard.text()
+
+    def insert_from_clipboard(self):
+        clipboard_data = self.get_clipboard_data()
+        self.entry.setText(clipboard_data)
+
+    def download_video(self):
+        url = self.entry.text()
+        if not url:
+            clipboard_data = self.get_clipboard_data()
+            self.entry.setText(clipboard_data)
+            url = self.entry.text()
+
+        if url and self.quality_combo.currentIndex() > 0:
+            yt = YouTube(url)
+            selected_quality = self.quality_combo.currentText()
+            video_stream = yt.streams.filter(res=selected_quality).first()
+            video_stream.download(output_path=os.path.expanduser('~/Downloads'), filename='temp.mp4')
+            self.status_label.setText("Видео успешно скачано!")
+        else:
+            self.status_label.setText("Пожалуйста, введите URL и выберите качество")
+
+    def convert_to_mp3(self):
+        video = os.path.expanduser('~/Downloads/temp.mp4')
+        audio = os.path.expanduser('~/Downloads/temp.mp3')
+        file = AudioFileClip(video)
+        file.write_audiofile(audio)
+        file.close()
+        self.status_label.setText("Конвертация завершена!")
+
+if __name__ == "__main__":
+    app = QApplication([])
+    window = YoutubeDownloaderApp()
+
+    # Заполнение выпадающего списка качества видео
+    quality_options = ["360p", "720p"]
+    window.quality_combo.addItems(quality_options)
+
+    window.show()
+    app.exec_()
