@@ -12,6 +12,10 @@
 pip install PyQt5 pytube moviepy
 ```
 
+## Интерфейс программы
+
+![photo_2024-02-09_18-54-39](https://github.com/daniilmight/Video-downloader-from-YouTube/assets/71521420/490a3b96-4ace-4516-9f30-a13b866b78a0)
+
 ## Использование
 
 1. Введите URL видео в текстовое поле или воспользуйтесь кнопкой "Вставить из буфера обмена".
